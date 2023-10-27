@@ -1,0 +1,21 @@
+[package]
+name = "rust-axum-htmx"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.75"
+axum = "0.6.20"
+minijinja = { version = "1.0.9", features = ["loader"] }
+minijinja-autoreload = "1.0.9"
+tokio = { version = "1.33.0", features = ["full"] }
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
+sqlx = { version = "0.5", features = ["runtime-tokio-native-tls", "postgres", "uuid", "time"] }
+dotenv = "0.15.0"
+futures = "0.3.29"
+
+[build-dependencies]
+syn = "1"
