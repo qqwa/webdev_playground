@@ -1,20 +1,16 @@
 use anyhow::Context;
+use html::AppState;
 use minijinja::{path_loader, Environment};
 use minijinja_autoreload::AutoReloader;
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
 
+mod error;
 mod html;
 
-#[derive(Clone)]
-pub struct AppState {
-    db: PgPool,
-    reloader: Arc<AutoReloader>,
-}
-
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn main() -> Result<(), anyhow::Error> {
     dotenv::dotenv().ok();
 
     tracing_subscriber::registry()
@@ -45,6 +41,12 @@ async fn main() -> anyhow::Result<()> {
     });
     let reloader = Arc::new(reloader);
 
-    let app_state = AppState { db, reloader };
+    let oauth_client = html::oauth::oauth_client().unwrap();
+
+    let app_state = AppState {
+        db,
+        reloader,
+        oauth_client,
+    };
     html::serve(app_state).await
 }

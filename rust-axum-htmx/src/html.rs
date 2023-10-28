@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::Context;
 use axum::{
     extract::State,
@@ -6,11 +8,21 @@ use axum::{
     Router,
 };
 use minijinja::context;
+use minijinja_autoreload::AutoReloader;
+use oauth2::basic::BasicClient;
+use sqlx::PgPool;
 use tracing::info;
 
-use crate::AppState;
+pub mod oauth;
 
-mod oauth;
+static COOKIE_NAME: &str = "SESSION";
+
+#[derive(Clone)]
+pub struct AppState {
+    pub db: PgPool,
+    pub reloader: Arc<AutoReloader>,
+    pub oauth_client: BasicClient,
+}
 
 fn app(state: AppState) -> Router {
     Router::new()
