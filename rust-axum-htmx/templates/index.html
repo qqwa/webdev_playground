@@ -6,11 +6,16 @@
     <title>Document</title>
 </head>
 <body>
-    <h2>Blub {{ username }}!</h2>
-    <a href="/auth/github">Login with Github</a>
-    <br>
-    Your github id is: {{ github_id }}
-    <br>
-    {{ count }}
+    {% if github_id == 0 %}
+        <h2>Welcome {{ username }}!</h2>
+        <a href="/auth/github">Login with Github</a>
+    {% else %}
+        <h2>Welcome {{ username }}!</h2>
+        <p>Your github id is: {{ github_id }}</p>
+        <a href="/auth/logout">Logout</a>
+    {% endif %}
+    <p>
+        You visited this page {{ count }} times.
+    </p>
 </body>
 </html>
