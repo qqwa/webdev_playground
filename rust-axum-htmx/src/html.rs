@@ -2,7 +2,9 @@ use std::sync::Arc;
 
 use anyhow::Context;
 use axum::{
+    error_handling::HandleErrorLayer,
     extract::State,
+    http::StatusCode,
     response::{Html, IntoResponse},
     routing::get,
     Router,
@@ -11,11 +13,17 @@ use minijinja::context;
 use minijinja_autoreload::AutoReloader;
 use oauth2::basic::BasicClient;
 use sqlx::PgPool;
+use tower::{BoxError, ServiceBuilder};
+use tower_sessions::Session;
 use tracing::info;
 
-pub mod oauth;
+use crate::{
+    error::AppError,
+    html::{oauth::User, session::GithubAccessToken},
+};
 
-static COOKIE_NAME: &str = "SESSION";
+pub mod oauth;
+mod session;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -25,10 +33,19 @@ pub struct AppState {
 }
 
 fn app(state: AppState) -> Router {
+    let db = state.db.clone();
     Router::new()
         .route("/", get(hello))
         .merge(oauth::router())
         .with_state(state)
+        .layer(
+            //TODO: put whole ServiceBuilder into session mod
+            ServiceBuilder::new()
+                .layer(HandleErrorLayer::new(|_: BoxError| async {
+                    StatusCode::BAD_REQUEST
+                }))
+                .layer(session::service(db)),
+        )
 }
 
 pub async fn serve(state: AppState) -> anyhow::Result<()> {
@@ -44,16 +61,31 @@ struct User2 {
     username: String,
 }
 
-async fn hello(State(state): State<AppState>) -> impl IntoResponse {
+async fn hello(
+    State(state): State<AppState>,
+    session: Session,
+) -> Result<impl IntoResponse, AppError> {
     let user = sqlx::query_as!(User2, "SELECT username from users")
         .fetch_one(&state.db)
         .await
         .unwrap();
-    info!("{:?}", user);
+    info!("{:?}", user.username);
+
+    let github_access_token: GithubAccessToken = session
+        .get(GithubAccessToken::key())
+        .expect("could not deserizale.")
+        .unwrap_or_default();
+    let (github_id, username) = if github_access_token.0 != "" {
+        let response_text =
+            oauth::request_github("https://api.github.com/user", &github_access_token.0).await?;
+        let user: User = serde_json::from_str(&response_text)?;
+        (user.id, user.login)
+    } else {
+        (0, "".into())
+    };
 
     let env = state.reloader.acquire_env().unwrap();
     let template = env.get_template("index.html").unwrap();
-    let username = user.username;
-    let render = template.render(context! {username}).unwrap();
-    Html(render)
+    let render = template.render(context! {username, github_id}).unwrap();
+    Ok(Html(render))
 }

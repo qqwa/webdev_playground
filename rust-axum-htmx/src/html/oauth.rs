@@ -1,9 +1,10 @@
 use std::env;
 
 use anyhow::Context;
+use async_session::log::info;
 use axum::{
     extract::{Query, State},
-    http::{header::SET_COOKIE, header::USER_AGENT, HeaderMap},
+    http::header::USER_AGENT,
     response::{IntoResponse, Redirect},
     routing::get,
     Router,
@@ -13,11 +14,11 @@ use oauth2::{
     ClientSecret, CsrfToken, RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
 use serde::{Deserialize, Serialize};
-use tracing::info;
+use tower_sessions::Session;
 
 use crate::{
     error::AppError,
-    html::{AppState, COOKIE_NAME},
+    html::{session::GithubAccessToken, AppState},
 };
 
 pub fn oauth_client() -> Result<BasicClient, AppError> {
@@ -62,16 +63,17 @@ struct AuthRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct User {
-    id: i32,
-    avatar_url: Option<String>,
-    login: String,
-    html_url: String,
+pub struct User {
+    pub id: i32,
+    pub avatar_url: Option<String>,
+    pub login: String,
+    pub html_url: String,
 }
 
 async fn login_authorized(
     Query(query): Query<AuthRequest>,
     State(state): State<AppState>,
+    session: Session,
 ) -> Result<impl IntoResponse, AppError> {
     let token = state
         .oauth_client
@@ -80,29 +82,25 @@ async fn login_authorized(
         .await
         .context("failed in sending request request to authorization server")?;
 
+    info!("{}", token.access_token().secret());
+    session
+        .insert(GithubAccessToken::key(), token.access_token().secret())
+        .expect("could not store github access token");
+
+    Ok(Redirect::to("/"))
+}
+
+pub async fn request_github(url: &str, access_token: &str) -> Result<String, AppError> {
     let client = reqwest::Client::new();
     let response = client
-        .get("https://api.github.com/user")
-        .bearer_auth(token.access_token().secret())
+        .get(url)
+        .bearer_auth(access_token)
         .header(USER_AGENT, "oauth_test")
         .send()
         .await
         .context("failed in sending request to target Url")?;
 
-    let response_text = response.text().await.unwrap();
+    let response_text = response.text().await?;
 
-    info!("{}", response_text);
-    let user_data: User = serde_json::from_str(&response_text)?;
-
-    // TODO: save user data in db?
-
-    let cookie = format!("{COOKIE_NAME}={}; SameSite=Lax; Path=/", user_data.id);
-
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        SET_COOKIE,
-        cookie.parse().context("failed to parse cookie")?,
-    );
-
-    Ok((headers, Redirect::to("/")))
+    Ok(response_text)
 }
