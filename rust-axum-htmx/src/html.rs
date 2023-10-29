@@ -39,6 +39,7 @@ fn app(state: AppState) -> Router {
     let db = state.db.clone();
     Router::new()
         .route("/", get(hello))
+        .route("/session", get(session))
         .merge(oauth::router())
         .layer(
             //TODO: put whole ServiceBuilder into session mod
@@ -103,4 +104,8 @@ async fn hello(
         .render(context! {username, github_id, count})
         .unwrap();
     Ok(Html(render))
+}
+
+async fn session(session: Session) -> Result<impl IntoResponse, AppError> {
+    Ok(format!("{:#?}", session))
 }
