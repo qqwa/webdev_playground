@@ -43,6 +43,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/auth/github", get(github_auth))
         .route("/auth/callback/github", get(login_authorized))
+        .route("/auth/logout", get(logout))
 }
 
 async fn github_auth(State(state): State<AppState>) -> impl IntoResponse {
@@ -123,4 +124,19 @@ pub async fn request_github(url: &str, access_token: &str) -> Result<String, App
     let response_text = response.text().await?;
 
     Ok(response_text)
+}
+
+async fn logout(session: Session) -> Result<impl IntoResponse, AppError> {
+    let session_user: SessionUser = session
+        .get(SessionUser::key())
+        .expect("Could not serialze.")
+        .unwrap_or_default();
+
+    match session_user {
+        SessionUser::Guest => Ok(Redirect::to("/")),
+        SessionUser::Github(_) => {
+            session.insert(SessionUser::key(), SessionUser::Guest)?;
+            Ok(Redirect::to("/"))
+        }
+    }
 }
