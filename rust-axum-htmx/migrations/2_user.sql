@@ -1,7 +1,7 @@
 create table "users"(
-    user_id uuid primary key default uuid_generate_v1mc(),
-    username text collate "case_insensitive" unique not null,
-    password_hash text not null,
+    github_id int not null,
+    github_login text,
+    access_token text,
     created_at timestamptz not null default now(),
     updated_at timestamptz
 );

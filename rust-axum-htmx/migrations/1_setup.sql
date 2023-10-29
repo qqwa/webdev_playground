@@ -1,5 +1,3 @@
-create extension if not exists "uuid-ossp";
-
 create or replace function set_updated_at()
     returns trigger as
 $$
@@ -21,5 +19,3 @@ begin
     EXECUTE FUNCTION set_updated_at();', tablename);
 end;
 $$ language plpgsql;
-
-create collation case_insensitive (provider = icu, locale = 'und-u-ks-level2', deterministic = false);

@@ -4,10 +4,12 @@ use minijinja::{path_loader, Environment};
 use minijinja_autoreload::AutoReloader;
 use sqlx::postgres::PgPoolOptions;
 use std::sync::Arc;
+use tower_sessions::PostgresStore;
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
 
 mod error;
 mod html;
+mod models;
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
@@ -28,6 +30,7 @@ async fn main() -> Result<(), anyhow::Error> {
         .await
         .context("could not connect to database_url")?;
     sqlx::migrate!().run(&db).await?;
+    PostgresStore::new(db.clone()).migrate().await?;
 
     let reloader = AutoReloader::new(move |notfier| {
         let template_path = "./templates";

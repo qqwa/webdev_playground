@@ -17,7 +17,8 @@ use tower_sessions::Session;
 
 use crate::{
     error::AppError,
-    html::{session::GithubAccessToken, AppState},
+    html::{session::SessionUser, AppState},
+    models::User,
 };
 
 pub fn oauth_client() -> Result<BasicClient, AppError> {
@@ -62,7 +63,7 @@ struct AuthRequest {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct User {
+pub struct GithubResponseUser {
     pub id: i32,
     pub avatar_url: Option<String>,
     pub login: String,
@@ -82,9 +83,29 @@ async fn login_authorized(
         .await
         .context("failed in sending request request to authorization server")?;
 
-    session
-        .insert(GithubAccessToken::key(), token.access_token().secret())
-        .expect("could not store github access token");
+    let response_text =
+        request_github("https://api.github.com/user", token.access_token().secret()).await?;
+    let user: GithubResponseUser = serde_json::from_str(&response_text)?;
+
+    let db_user: Option<User> = sqlx::query_as!(
+        crate::models::User,
+        "select * from users where github_id = $1",
+        user.id
+    )
+    .fetch_optional(&state.db)
+    .await?;
+    let db_user = if db_user.is_none() {
+        let new_user: User = sqlx::query_as("insert into users (github_id, github_login, access_token) values($1, $2, $3) returning *")
+            .bind(user.id)
+            .bind(user.login)
+            .bind(token.access_token().secret())
+            .fetch_one(&state.db).await?;
+        new_user
+    } else {
+        db_user.unwrap()
+    };
+
+    session.insert(SessionUser::key(), SessionUser::Github(db_user.github_id))?;
 
     Ok(Redirect::to("/"))
 }

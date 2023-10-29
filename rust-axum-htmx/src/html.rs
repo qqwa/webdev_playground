@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::Context;
+use async_session::log::warn;
 use axum::{
     error_handling::HandleErrorLayer,
     extract::State,
@@ -15,14 +16,11 @@ use oauth2::basic::BasicClient;
 use sqlx::PgPool;
 use tower::{BoxError, ServiceBuilder};
 use tower_sessions::Session;
-use tracing::info;
 
 use crate::{
     error::AppError,
-    html::{
-        oauth::User,
-        session::{Counter, GithubAccessToken},
-    },
+    html::session::{Counter, SessionUser},
+    models::User,
 };
 
 pub mod oauth;
@@ -60,33 +58,33 @@ pub async fn serve(state: AppState) -> anyhow::Result<()> {
         .context("failed to start Axum Server")
 }
 
-#[derive(Debug)]
-struct User2 {
-    username: String,
-}
-
 #[axum_macros::debug_handler]
 async fn hello(
     State(state): State<AppState>,
     session: Session,
 ) -> Result<impl IntoResponse, AppError> {
-    let user = sqlx::query_as!(User2, "SELECT username from users")
-        .fetch_one(&state.db)
-        .await
-        .unwrap();
-    info!("{:?}", user.username);
-
-    let github_access_token: GithubAccessToken = session
-        .get(GithubAccessToken::key())
-        .expect("could not deserizale.")
+    let session_user: SessionUser = session
+        .get(SessionUser::key())
+        .expect("could not serialize")
         .unwrap_or_default();
-    let (github_id, username) = if github_access_token.0 != "" {
-        let response_text =
-            oauth::request_github("https://api.github.com/user", &github_access_token.0).await?;
-        let user: User = serde_json::from_str(&response_text)?;
-        (user.id, user.login)
-    } else {
-        (0, "".into())
+    let (github_id, username) = match session_user {
+        SessionUser::Guest => (0i32, "".to_owned()),
+        SessionUser::Github(github_id) => {
+            let user: Option<User> = sqlx::query_as("select * from users where github_id = $1")
+                .bind(github_id)
+                .fetch_optional(&state.db)
+                .await?;
+            if let Some(user) = user {
+                (user.github_id, user.github_login.unwrap())
+            } else {
+                warn!(
+                    "Session {} has github_id {}, which couldn't be found in database",
+                    session.id(),
+                    github_id
+                );
+                (0i32, "error".to_owned())
+            }
+        }
     };
 
     let counter: Counter = session

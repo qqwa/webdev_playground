@@ -20,10 +20,14 @@ impl Counter {
     }
 }
 
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct GithubAccessToken(pub String);
-impl GithubAccessToken {
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
+pub enum SessionUser {
+    #[default]
+    Guest,
+    Github(i32),
+}
+impl SessionUser {
     pub fn key() -> &'static str {
-        "GithubAccessToken"
+        "User"
     }
 }
