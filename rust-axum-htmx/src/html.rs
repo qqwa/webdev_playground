@@ -1,17 +1,9 @@
-use std::sync::Arc;
-
 use anyhow::Context;
 use async_session::log::warn;
 use axum::{
-    error_handling::HandleErrorLayer,
-    extract::State,
-    http::StatusCode,
-    response::{Html, IntoResponse},
-    routing::get,
-    Router,
+    error_handling::HandleErrorLayer, extract::State, http::StatusCode, response::IntoResponse,
+    routing::get, Router,
 };
-use minijinja::context;
-use minijinja_autoreload::AutoReloader;
 use oauth2::basic::BasicClient;
 use sqlx::PgPool;
 use tower::{BoxError, ServiceBuilder};
@@ -21,6 +13,7 @@ use crate::{
     error::AppError,
     html::session::{Counter, SessionUser},
     models::User,
+    views::IndexTemplate,
 };
 
 pub mod oauth;
@@ -29,7 +22,6 @@ mod session;
 #[derive(Clone)]
 pub struct AppState {
     pub db: PgPool,
-    pub reloader: Arc<AutoReloader>,
     pub oauth_client: BasicClient,
 }
 
@@ -96,12 +88,12 @@ async fn hello(
         .insert(Counter::key(), count + 1)
         .expect("could not serizale.");
 
-    let env = state.reloader.acquire_env().unwrap();
-    let template = env.get_template("index.html").unwrap();
-    let render = template
-        .render(context! {username, github_id, count})
-        .unwrap();
-    Ok(Html(render))
+    Ok(IndexTemplate {
+        count,
+        github_id,
+        username: &username,
+    }
+    .into_response())
 }
 
 async fn session(session: Session) -> Result<impl IntoResponse, AppError> {

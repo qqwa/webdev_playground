@@ -9,8 +9,6 @@ edition = "2021"
 anyhow = "1.0.75"
 async-session = "3.0.0"
 axum = "0.6.20"
-minijinja = { version = "1.0.9", features = ["loader"] }
-minijinja-autoreload = "1.0.9"
 tokio = { version = "1.33.0", features = ["full"] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.17", features = ["env-filter"] }
@@ -25,6 +23,8 @@ time = { version = "0.3.29", features = ["serde"] }
 tower-sessions = { version = "0.3.3", features = ["axum-core", "postgres-store"] }
 tower = "0.4.13"
 axum-macros = "0.3.8"
+askama_axum = "0.3.0"
+askama = { version = "0.12.1", features = ["with-axum"] }
 
 [build-dependencies]
 syn = "1"
