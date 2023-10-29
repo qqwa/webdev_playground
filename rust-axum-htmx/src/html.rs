@@ -19,7 +19,10 @@ use tracing::info;
 
 use crate::{
     error::AppError,
-    html::{oauth::User, session::GithubAccessToken},
+    html::{
+        oauth::User,
+        session::{Counter, GithubAccessToken},
+    },
 };
 
 pub mod oauth;
@@ -37,7 +40,6 @@ fn app(state: AppState) -> Router {
     Router::new()
         .route("/", get(hello))
         .merge(oauth::router())
-        .with_state(state)
         .layer(
             //TODO: put whole ServiceBuilder into session mod
             ServiceBuilder::new()
@@ -46,6 +48,7 @@ fn app(state: AppState) -> Router {
                 }))
                 .layer(session::service(db)),
         )
+        .with_state(state)
 }
 
 pub async fn serve(state: AppState) -> anyhow::Result<()> {
@@ -61,6 +64,7 @@ struct User2 {
     username: String,
 }
 
+#[axum_macros::debug_handler]
 async fn hello(
     State(state): State<AppState>,
     session: Session,
@@ -84,8 +88,19 @@ async fn hello(
         (0, "".into())
     };
 
+    let counter: Counter = session
+        .get(Counter::key())
+        .expect("could not deserizale.")
+        .unwrap_or_default();
+    let count = counter.0;
+    session
+        .insert(Counter::key(), count + 1)
+        .expect("could not serizale.");
+
     let env = state.reloader.acquire_env().unwrap();
     let template = env.get_template("index.html").unwrap();
-    let render = template.render(context! {username, github_id}).unwrap();
+    let render = template
+        .render(context! {username, github_id, count})
+        .unwrap();
     Ok(Html(render))
 }

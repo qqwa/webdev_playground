@@ -1,7 +1,6 @@
 use std::env;
 
 use anyhow::Context;
-use async_session::log::info;
 use axum::{
     extract::{Query, State},
     http::header::USER_AGENT,
@@ -70,6 +69,7 @@ pub struct User {
     pub html_url: String,
 }
 
+#[axum_macros::debug_handler]
 async fn login_authorized(
     Query(query): Query<AuthRequest>,
     State(state): State<AppState>,
@@ -82,7 +82,6 @@ async fn login_authorized(
         .await
         .context("failed in sending request request to authorization server")?;
 
-    info!("{}", token.access_token().secret());
     session
         .insert(GithubAccessToken::key(), token.access_token().secret())
         .expect("could not store github access token");
