@@ -80,20 +80,15 @@ async fn login_authorized(
         .get_authenticated_user()
         .await?;
 
-    let db_user: Option<User> = sqlx::query_as!(
-        crate::models::User,
-        "select * from users where github_id = $1",
-        user.id
-    )
-    .fetch_optional(&state.db)
-    .await?;
+    let db_user: Option<User> = User::get_user_by_github_id(&state.db, user.id).await?;
     let db_user = if db_user.is_none() {
-        let new_user: User = sqlx::query_as("insert into users (github_id, github_login, access_token) values($1, $2, $3) returning *")
-            .bind(user.id)
-            .bind(user.login)
-            .bind(token.access_token().secret())
-            .fetch_one(&state.db).await?;
-        new_user
+        User::create_user(
+            &state.db,
+            user.id,
+            &user.login,
+            token.access_token().secret(),
+        )
+        .await?
     } else {
         db_user.unwrap()
     };
