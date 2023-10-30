@@ -6,6 +6,7 @@ use tower_sessions::PostgresStore;
 use tracing_subscriber::{prelude::__tracing_subscriber_SubscriberExt, util::SubscriberInitExt};
 
 mod error;
+mod github;
 mod html;
 mod models;
 mod views;

@@ -3,7 +3,6 @@ use std::env;
 use anyhow::Context;
 use axum::{
     extract::{Query, State},
-    http::header::USER_AGENT,
     response::{IntoResponse, Redirect},
     routing::get,
     Router,
@@ -12,11 +11,12 @@ use oauth2::{
     basic::BasicClient, reqwest::async_http_client, AuthUrl, AuthorizationCode, ClientId,
     ClientSecret, CsrfToken, RedirectUrl, Scope, TokenResponse, TokenUrl,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tower_sessions::Session;
 
 use crate::{
     error::AppError,
+    github::Github,
     html::{session::SessionUser, AppState},
     models::User,
 };
@@ -63,14 +63,6 @@ struct AuthRequest {
     state: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GithubResponseUser {
-    pub id: i32,
-    pub avatar_url: Option<String>,
-    pub login: String,
-    pub html_url: String,
-}
-
 #[axum_macros::debug_handler]
 async fn login_authorized(
     Query(query): Query<AuthRequest>,
@@ -84,9 +76,9 @@ async fn login_authorized(
         .await
         .context("failed in sending request request to authorization server")?;
 
-    let response_text =
-        request_github("https://api.github.com/user", token.access_token().secret()).await?;
-    let user: GithubResponseUser = serde_json::from_str(&response_text)?;
+    let user = Github::new(token.access_token().secret())
+        .get_authenticated_user()
+        .await?;
 
     let db_user: Option<User> = sqlx::query_as!(
         crate::models::User,
@@ -109,21 +101,6 @@ async fn login_authorized(
     session.insert(SessionUser::key(), SessionUser::Github(db_user.github_id))?;
 
     Ok(Redirect::to("/"))
-}
-
-pub async fn request_github(url: &str, access_token: &str) -> Result<String, AppError> {
-    let client = reqwest::Client::new();
-    let response = client
-        .get(url)
-        .bearer_auth(access_token)
-        .header(USER_AGENT, "oauth_test")
-        .send()
-        .await
-        .context("failed in sending request to target Url")?;
-
-    let response_text = response.text().await?;
-
-    Ok(response_text)
 }
 
 async fn logout(session: Session) -> Result<impl IntoResponse, AppError> {
