@@ -1,4 +1,5 @@
 use anyhow::Context;
+use axum_csrf::CsrfConfig;
 use html::AppState;
 use sqlx::postgres::PgPoolOptions;
 use tower_sessions::PostgresStore;
@@ -30,8 +31,10 @@ async fn main() -> Result<(), anyhow::Error> {
     sqlx::migrate!().run(&db).await?;
     PostgresStore::new(db.clone()).migrate().await?;
 
+    let csrf = CsrfConfig::default();
+
     let oauth_client = html::oauth::oauth_client().unwrap();
 
     let app_state = AppState { db, oauth_client };
-    html::serve(app_state).await
+    html::serve(app_state, csrf).await
 }

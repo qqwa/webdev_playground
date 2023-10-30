@@ -2,9 +2,11 @@ use anyhow::Context;
 use async_session::log::warn;
 use axum::{
     error_handling::HandleErrorLayer, extract::State, http::StatusCode, response::IntoResponse,
-    routing::get, Router,
+    routing::get, Form, Router,
 };
+use axum_csrf::{CsrfConfig, CsrfLayer, CsrfToken};
 use oauth2::basic::BasicClient;
+use serde::Deserialize;
 use sqlx::PgPool;
 use tower::{BoxError, ServiceBuilder};
 use tower_sessions::Session;
@@ -13,7 +15,7 @@ use crate::{
     error::AppError,
     html::session::{Counter, SessionUser},
     models::User,
-    views::IndexTemplate,
+    views::{FormTemplate, IndexTemplate},
 };
 
 pub mod oauth;
@@ -25,11 +27,12 @@ pub struct AppState {
     pub oauth_client: BasicClient,
 }
 
-fn app(state: AppState) -> Router {
+fn app(state: AppState, csrf: CsrfConfig) -> Router {
     let db = state.db.clone();
     Router::new()
         .route("/", get(hello))
         .route("/session", get(session))
+        .route("/form", get(form_get).post(form_post))
         .merge(oauth::router())
         .layer(
             //TODO: put whole ServiceBuilder into session mod
@@ -40,17 +43,17 @@ fn app(state: AppState) -> Router {
                 .layer(session::service(db)),
         )
         .with_state(state)
+        .layer(CsrfLayer::new(csrf))
 }
 
-pub async fn serve(state: AppState) -> anyhow::Result<()> {
+pub async fn serve(state: AppState, csrf: CsrfConfig) -> anyhow::Result<()> {
     // let app = app(state).into_make_service();
     axum::Server::bind(&"127.0.0.1:4000".parse().unwrap())
-        .serve(app(state).into_make_service())
+        .serve(app(state, csrf).into_make_service())
         .await
         .context("failed to start Axum Server")
 }
 
-#[axum_macros::debug_handler]
 async fn hello(
     State(state): State<AppState>,
     session: Session,
@@ -98,4 +101,34 @@ async fn hello(
 
 async fn session(session: Session) -> Result<impl IntoResponse, AppError> {
     Ok(format!("{:#?}", session))
+}
+
+async fn form_get(csrf_token: CsrfToken) -> Result<impl IntoResponse, AppError> {
+    let template = FormTemplate {
+        csrf_token: csrf_token.authenticity_token()?,
+        ..Default::default()
+    };
+    Ok((csrf_token, template))
+}
+
+#[derive(Deserialize, Debug)]
+struct FormData {
+    csrf_token: String,
+    data: String,
+}
+
+async fn form_post(
+    csrf_token: CsrfToken,
+    Form(form_data): Form<FormData>,
+) -> Result<impl IntoResponse, AppError> {
+    match csrf_token.verify(&form_data.csrf_token) {
+        Ok(_) => Ok(FormTemplate {
+            csrf_token: csrf_token.authenticity_token()?,
+            response: Some(form_data.data),
+        }),
+        Err(_) => Ok(FormTemplate {
+            csrf_token: csrf_token.authenticity_token()?,
+            response: Some("Wrong csrf token...".into()),
+        }),
+    }
 }
