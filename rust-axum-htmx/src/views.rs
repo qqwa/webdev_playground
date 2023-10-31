@@ -14,3 +14,28 @@ pub struct FormTemplate {
     pub response: Option<String>,
     pub csrf_token: String,
 }
+
+#[derive(Template, Default)]
+#[template(path = "secret.html")]
+pub struct SecretTemplate {
+    pub username: String,
+    pub box_template: BoxTemplate,
+}
+
+#[derive(Template, Default)]
+#[template(path = "repos.html")]
+pub struct ReposTemplate {
+    pub repos: Vec<RepoInfo>,
+}
+
+pub struct RepoInfo {
+    pub full_name: String,
+    pub description: String,
+    pub url: String,
+}
+
+#[derive(Template, Default)]
+#[template(path = "box.html")]
+pub struct BoxTemplate {
+    pub color: String,
+}

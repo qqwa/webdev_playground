@@ -1,8 +1,12 @@
 use anyhow::Context;
 use async_session::log::warn;
 use axum::{
-    error_handling::HandleErrorLayer, extract::State, http::StatusCode, response::IntoResponse,
-    routing::get, Form, Router,
+    error_handling::HandleErrorLayer,
+    extract::State,
+    http::{HeaderMap, StatusCode},
+    response::{IntoResponse, Redirect},
+    routing::get,
+    Form, Router,
 };
 use axum_csrf::{CsrfConfig, CsrfLayer, CsrfToken};
 use oauth2::basic::BasicClient;
@@ -10,12 +14,14 @@ use serde::Deserialize;
 use sqlx::PgPool;
 use tower::{BoxError, ServiceBuilder};
 use tower_sessions::Session;
+use tracing::info;
 
 use crate::{
     error::AppError,
+    github::Github,
     html::session::{Counter, SessionUser},
     models::User,
-    views::{FormTemplate, IndexTemplate},
+    views::{BoxTemplate, FormTemplate, IndexTemplate, RepoInfo, ReposTemplate, SecretTemplate},
 };
 
 pub mod oauth;
@@ -33,6 +39,9 @@ fn app(state: AppState, csrf: CsrfConfig) -> Router {
         .route("/", get(hello))
         .route("/session", get(session))
         .route("/form", get(form_get).post(form_post))
+        .route("/repos", get(repos))
+        .route("/secret", get(secret))
+        .route("/box", get(box_get))
         .merge(oauth::router())
         .layer(
             //TODO: put whole ServiceBuilder into session mod
@@ -65,10 +74,7 @@ async fn hello(
     let (github_id, username) = match session_user {
         SessionUser::Guest => (0i32, "".to_owned()),
         SessionUser::Github(github_id) => {
-            let user: Option<User> = sqlx::query_as("select * from users where github_id = $1")
-                .bind(github_id)
-                .fetch_optional(&state.db)
-                .await?;
+            let user: Option<User> = User::get_user_by_github_id(&state.db, github_id).await?;
             if let Some(user) = user {
                 (user.github_id, user.github_login.unwrap())
             } else {
@@ -131,4 +137,79 @@ async fn form_post(
             response: Some("Wrong csrf token...".into()),
         }),
     }
+}
+
+async fn repos(
+    State(state): State<AppState>,
+    session: Session,
+) -> Result<impl IntoResponse, AppError> {
+    let session_user: SessionUser = session
+        .get(SessionUser::key())
+        .expect("could not serialize")
+        .unwrap_or_default();
+
+    if let SessionUser::Github(github_id) = session_user {
+        let user: User = User::get_user_by_github_id(&state.db, github_id)
+            .await?
+            .unwrap();
+
+        let repos = Github::new(&user.access_token.unwrap_or_default())
+            .get_public_repositories()
+            .await?;
+
+        let repos: Vec<RepoInfo> = repos
+            .into_iter()
+            .map(|repo| RepoInfo {
+                full_name: repo.full_name,
+                description: repo.description.unwrap_or_default(),
+                url: repo.html_url,
+            })
+            .collect();
+
+        Ok(ReposTemplate { repos }.into_response())
+    } else {
+        Ok(().into_response())
+    }
+}
+
+async fn secret(
+    State(state): State<AppState>,
+    session: Session,
+) -> Result<impl IntoResponse, AppError> {
+    let session_user: SessionUser = session
+        .get(SessionUser::key())
+        .expect("could not serialize")
+        .unwrap_or_default();
+
+    if let SessionUser::Github(github_id) = session_user {
+        let user = User::get_user_by_github_id(&state.db, github_id)
+            .await?
+            .unwrap();
+        return Ok(SecretTemplate {
+            username: user.github_login.unwrap(),
+            box_template: BoxTemplate {
+                color: "bg-yellow-200".to_owned(),
+            },
+        }
+        .into_response());
+    } else {
+        return Ok(Redirect::to("/").into_response());
+    }
+}
+
+async fn box_get(headers: HeaderMap) -> Result<impl IntoResponse, AppError> {
+    let old_color: Option<&str> = headers
+        .get("HX-Trigger-Name")
+        .map(|header| header.to_str().unwrap());
+    let color = match old_color {
+        Some("bg-yellow-200") => "bg-blue-200".to_owned(),
+        Some("bg-blue-200") => "bg-green-200".to_owned(),
+        Some("bg-green-200") => "bg-gray-200".to_owned(),
+        Some("bg-gray-200") => "bg-violet-200".to_owned(),
+        Some("bg-violet-200") => "bg-red-200".to_owned(),
+        Some("bg-red-200") => "bg-indigo-200".to_owned(),
+        _ => "bg-yellow-200".to_owned(),
+    };
+
+    Ok(BoxTemplate { color }.into_response())
 }
