@@ -21,7 +21,9 @@ use crate::{
     github::Github,
     html::session::{Counter, SessionUser},
     models::User,
-    views::{BoxTemplate, FormTemplate, IndexTemplate, RepoInfo, ReposTemplate, SecretTemplate},
+    views::{
+        self, BoxTemplate, FormTemplate, IndexTemplate, RepoInfo, ReposTemplate, SecretTemplate,
+    },
 };
 
 pub mod oauth;
@@ -187,9 +189,7 @@ async fn secret(
             .unwrap();
         return Ok(SecretTemplate {
             username: user.github_login.unwrap(),
-            box_template: BoxTemplate {
-                color: "bg-yellow-200".to_owned(),
-            },
+            box_template: views::box_maud("bg-yellow-200".to_owned()).into_string(),
         }
         .into_response());
     } else {
@@ -211,5 +211,6 @@ async fn box_get(headers: HeaderMap) -> Result<impl IntoResponse, AppError> {
         _ => "bg-yellow-200".to_owned(),
     };
 
-    Ok(BoxTemplate { color }.into_response())
+    // Ok(BoxTemplate { color }.into_response())
+    Ok(views::box_maud(color).into_response())
 }
