@@ -7,11 +7,11 @@ import (
 )
 
 func Index(c echo.Context) error {
-	return c.Render(http.StatusOK, "index.html", map[string]string{})
+	return c.Render(http.StatusOK, "index", nil)
 }
 
 func Shorten(c echo.Context) error {
-	return c.String(http.StatusOK, "TODO")
+	return c.Render(http.StatusOK, "shorten", nil)
 }
 
 func ShortenPost(c echo.Context) error {
