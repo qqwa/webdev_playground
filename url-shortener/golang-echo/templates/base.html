@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{block "title" .}}{{end}}</title>
+    <script src="https://unpkg.com/htmx.org@1.9.6"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <header class="flex justify-between px-12 py-4 bg-teal-400">
+        <div>
+            <a href="/"><h2 class="text-2xl font-bold">Logo</h2></a>
+        </div>
+        <nav>
+            <ul class="flex gap-4">
+                <li><a href="/shorten">Shorten</a></li>
+                <li><a href="/feed/polling">Polling</a></li>
+                <li><a href="/feed/sse">SSE</a></li>
+                <li><a href="/feed/ws">WS</a></li>
+            </ul>
+        </nav>
+
+    </header>
+    <main class="px-12">
+        {{block "content" .}}{{end}}
+
+    </main>
+</body>
+</html>

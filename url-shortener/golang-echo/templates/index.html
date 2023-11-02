@@ -1,11 +1,21 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-</head>
-<body>
-    <h2>Hello World!</h2>
-</body>
-</html>
+{{template "base.html" .}}
+
+{{define "title"}}Index - Url Shortener{{end}}
+
+{{define "content"}}
+<div class="mt-2">
+    <h2 class="text-xl font-bold">Shorten Your Urls</h2>
+    <p>Click shorten in the navbar to create a new shortend link or watch
+        the activity of newly created shortend links and stats of them
+        either through polling, server sent events or websockets.
+    </p>
+</div>
+<div class="mt-2">
+    <h2 class="text-xl font-bold">REST API</h2>
+    <p>GET /api/links</p>
+    <p>POST /api/links</p>
+    <p>GET /api/links/:link</p>
+    <p>PATCH /api/links/:link</p>
+    <p>DELETE /api/links/:link</p>
+</div>
+{{end}}
