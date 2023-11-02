@@ -2,8 +2,8 @@ package views
 
 import (
 	"fmt"
-	"html/template"
 	"io"
+	"text/template"
 
 	"github.com/labstack/echo/v4"
 )
@@ -23,6 +23,7 @@ func GetTemplates() Template {
 
 	t.templates["index"] = addTemplate("templates/index.html")
 	t.templates["shorten"] = addTemplate("templates/shorten.html")
+	t.templates["shorten_post"] = addTemplate("templates/shorten_post.html")
 
 	return t
 }
