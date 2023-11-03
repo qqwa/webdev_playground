@@ -35,11 +35,11 @@ func ShortenPost(c echo.Context, db *sql.DB) error {
 
 func Url(c echo.Context, db *sql.DB) error {
 	short_url := c.Param("url")
-	long_url, err := shortener.GetLongUrl(db, short_url)
+	url, err := shortener.GetLongUrl(db, short_url)
 	if err != nil {
 		log.Println(err.Error())
 	}
-	return c.Redirect(http.StatusTemporaryRedirect, long_url)
+	return c.Redirect(http.StatusTemporaryRedirect, url.Long_url)
 }
 
 func FeedPolling(c echo.Context) error {

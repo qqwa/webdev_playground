@@ -39,9 +39,13 @@ func main() {
 	e.GET("/feed/ws", routes.FeedWS)
 
 	// api routes
-	e.GET("/api/urls", routes.GetUrls)
+	e.GET("/api/urls", func(c echo.Context) error {
+		return routes.GetUrls(c, db)
+	})
 	e.POST("/api/urls", routes.PostUrl)
-	e.GET("/api/urls/:url", routes.GetUrl)
+	e.GET("/api/urls/:url", func(c echo.Context) error {
+		return routes.GetUrl(c, db)
+	})
 	e.PATCH("/api/urls/:url", routes.PatchUrl)
 	e.DELETE("/api/urls/:url", routes.DeleteUrl)
 

@@ -3,6 +3,7 @@ package shortener
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"math/rand"
 	"strings"
 )
@@ -40,17 +41,34 @@ func CreateShortUrl(db *sql.DB, long_url string) (string, error) {
 }
 
 type UrlDb struct {
-	short_url string
-	long_url  string
+	Short_url string `json:"short_url"`
+	Long_url  string `json:"long_url"`
 }
 
-func GetLongUrl(db *sql.DB, short_url string) (string, error) {
+func GetLongUrl(db *sql.DB, short_url string) (*UrlDb, error) {
 	result := db.QueryRow("SELECT * FROM urls WHERE short_url = $1 LIMIT 1;", short_url)
-	var urls UrlDb
-	err := result.Scan(&urls.short_url, &urls.long_url)
+	var url UrlDb
+	err := result.Scan(&url.Short_url, &url.Long_url)
 	if err != nil {
-		return "/", err
+		return nil, err
 	} else {
-		return urls.long_url, nil
+		return &url, nil
 	}
+}
+
+func GetLongUrls(db *sql.DB) ([]UrlDb, error) {
+	rows, err := db.Query(("SELECT * FROM urls;"))
+	if err != nil {
+		log.Println("error: " + err.Error())
+	}
+	defer rows.Close()
+	urls := make([]UrlDb, 1)
+	for rows.Next() {
+		var url UrlDb
+		if err := rows.Scan(&url.Short_url, &url.Long_url); err != nil {
+			log.Println("error: " + err.Error())
+		}
+		urls = append(urls, url)
+	}
+	return urls, nil
 }
