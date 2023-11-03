@@ -24,11 +24,11 @@ func ShortenPost(c echo.Context, db *sql.DB) error {
 	m["long_url"] = long_url
 	m["host"] = c.Request().Host
 
-	short_url, err := shortener.CreateShortUrl(db, long_url)
+	url, err := shortener.CreateShortUrl(db, long_url)
 	if err != nil {
 		m["error"] = err.Error()
 	}
-	m["short_url"] = short_url
+	m["short_url"] = url.Short_url
 
 	return c.Render(http.StatusOK, "shorten_post", m)
 }

@@ -42,7 +42,9 @@ func main() {
 	e.GET("/api/urls", func(c echo.Context) error {
 		return routes.GetUrls(c, db)
 	})
-	e.POST("/api/urls", routes.PostUrl)
+	e.POST("/api/urls", func(c echo.Context) error {
+		return routes.PostUrl(c, db)
+	})
 	e.GET("/api/urls/:url", func(c echo.Context) error {
 		return routes.GetUrl(c, db)
 	})

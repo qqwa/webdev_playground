@@ -20,8 +20,22 @@ func GetUrls(c echo.Context, db *sql.DB) error {
 	return c.JSON(http.StatusOK, urls)
 }
 
-func PostUrl(c echo.Context) error {
-	return c.String(http.StatusOK, "TODO")
+type LongUrl struct {
+	Url string `json:"url"`
+}
+
+func PostUrl(c echo.Context, db *sql.DB) error {
+	var long_url LongUrl
+	err := c.Bind(&long_url)
+	if err != nil {
+		return c.JSON(http.StatusOK, ApiError{Message: err.Error()})
+	}
+	url, err := shortener.CreateShortUrl(db, long_url.Url)
+	if err != nil {
+		return c.JSON(http.StatusOK, ApiError{Message: err.Error()})
+	}
+	url.Short_url = "http://" + c.Request().Host + "/l/" + url.Short_url
+	return c.JSON(http.StatusOK, url)
 }
 
 func GetUrl(c echo.Context, db *sql.DB) error {

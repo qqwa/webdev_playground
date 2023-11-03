@@ -3,3 +3,11 @@ GET http://127.0.0.1:4000/api/urls
 
 ###
 GET http://127.0.0.1:4000/api/urls/bmrau
+
+###
+POST http://127.0.0.1:4000/api/urls
+Content-Type: application/json
+
+{
+    "url": "http://127.0.0.1:4000/feed/ws"
+}

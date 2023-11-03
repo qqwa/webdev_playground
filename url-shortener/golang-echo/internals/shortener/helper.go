@@ -23,7 +23,7 @@ func genShortUrl(size int) string {
 	return string(bytes)
 }
 
-func CreateShortUrl(db *sql.DB, long_url string) (string, error) {
+func CreateShortUrl(db *sql.DB, long_url string) (*UrlDb, error) {
 	if IsUrl(long_url) {
 		for _, i := range []int{5, 7, 9} {
 			short_url := genShortUrl(i)
@@ -31,12 +31,12 @@ func CreateShortUrl(db *sql.DB, long_url string) (string, error) {
 			if err != nil {
 				// generated url existed alreay try again
 			} else {
-				return short_url, nil
+				return &UrlDb{Short_url: short_url, Long_url: long_url}, nil
 			}
 		}
-		return "", errors.New("failed to generate url for " + long_url)
+		return nil, errors.New("failed to generate url for " + long_url)
 	} else {
-		return "", errors.New(long_url + " is not an URL")
+		return nil, errors.New(long_url + " is not an URL")
 	}
 }
 
