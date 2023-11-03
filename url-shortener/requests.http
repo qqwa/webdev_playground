@@ -11,3 +11,14 @@ Content-Type: application/json
 {
     "url": "http://127.0.0.1:4000/feed/ws"
 }
+
+###
+PATCH http://127.0.0.1:4000/api/urls/weuhi
+Content-Type: application/json
+
+{
+    "url": "http://127.0.0.1:4000/feed/poll"
+}
+
+###
+DELETE http://127.0.0.1:4000/api/urls/weuhi

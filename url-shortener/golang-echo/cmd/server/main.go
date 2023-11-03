@@ -48,8 +48,12 @@ func main() {
 	e.GET("/api/urls/:url", func(c echo.Context) error {
 		return routes.GetUrl(c, db)
 	})
-	e.PATCH("/api/urls/:url", routes.PatchUrl)
-	e.DELETE("/api/urls/:url", routes.DeleteUrl)
+	e.PATCH("/api/urls/:url", func(c echo.Context) error {
+		return routes.PatchUrl(c, db)
+	})
+	e.DELETE("/api/urls/:url", func(c echo.Context) error {
+		return routes.DeleteUrl(c, db)
+	})
 
 	e.Use(middleware.Logger())
 	e.Logger.Fatal(e.Start(":4000"))

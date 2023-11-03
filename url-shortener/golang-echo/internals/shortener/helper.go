@@ -40,6 +40,19 @@ func CreateShortUrl(db *sql.DB, long_url string) (*UrlDb, error) {
 	}
 }
 
+func UpdateShortUrl(db *sql.DB, short_url string, long_url string) (*UrlDb, error) {
+	if IsUrl(long_url) {
+		_, err := db.Exec("UPDATE urls SET long_url = $1 WHERE short_url = $2", long_url, short_url)
+		if err != nil {
+			return nil, err
+		} else {
+			return &UrlDb{Short_url: short_url, Long_url: long_url}, nil
+		}
+	} else {
+		return nil, errors.New(long_url + " is not an URL")
+	}
+}
+
 type UrlDb struct {
 	Short_url string `json:"short_url"`
 	Long_url  string `json:"long_url"`
@@ -71,4 +84,16 @@ func GetLongUrls(db *sql.DB) ([]UrlDb, error) {
 		urls = append(urls, url)
 	}
 	return urls, nil
+}
+
+func DeleteUrl(db *sql.DB, short_url string) error {
+	_, err := db.Exec("DELETE FROM urls where short_url = $1", short_url)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func ShortUrlToFullUrl(host string, short_url string) string {
+	return "http://" + host + "/l/" + short_url
 }
