@@ -44,6 +44,7 @@ func GetUrl(c echo.Context, db *sql.DB) error {
 	if err != nil {
 		return c.JSON(http.StatusOK, ApiError{Message: err.Error()})
 	}
+	shortener.IncrementShortUrl(db, short_url)
 	return c.JSON(http.StatusOK, url)
 }
 

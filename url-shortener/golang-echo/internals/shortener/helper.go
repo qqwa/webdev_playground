@@ -59,7 +59,7 @@ type UrlDb struct {
 }
 
 func GetLongUrl(db *sql.DB, short_url string) (*UrlDb, error) {
-	result := db.QueryRow("SELECT * FROM urls WHERE short_url = $1 LIMIT 1;", short_url)
+	result := db.QueryRow("SELECT short_url, long_url FROM urls WHERE short_url = $1 LIMIT 1;", short_url)
 	var url UrlDb
 	err := result.Scan(&url.Short_url, &url.Long_url)
 	if err != nil {
@@ -70,7 +70,7 @@ func GetLongUrl(db *sql.DB, short_url string) (*UrlDb, error) {
 }
 
 func GetLongUrls(db *sql.DB) ([]UrlDb, error) {
-	rows, err := db.Query(("SELECT * FROM urls;"))
+	rows, err := db.Query(("SELECT short_url, long_url FROM urls;"))
 	if err != nil {
 		log.Println("error: " + err.Error())
 	}
@@ -96,4 +96,12 @@ func DeleteUrl(db *sql.DB, short_url string) error {
 
 func ShortUrlToFullUrl(host string, short_url string) string {
 	return "http://" + host + "/l/" + short_url
+}
+
+func IncrementShortUrl(db *sql.DB, short_url string) error {
+	_, err := db.Exec("UPDATE urls SET counter = counter + 1 WHERE short_url = $1", short_url)
+	if err != nil {
+		return err
+	}
+	return nil
 }

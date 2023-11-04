@@ -39,6 +39,7 @@ func Url(c echo.Context, db *sql.DB) error {
 	if err != nil {
 		log.Println(err.Error())
 	}
+	shortener.IncrementShortUrl(db, short_url)
 	return c.Redirect(http.StatusTemporaryRedirect, url.Long_url)
 }
 

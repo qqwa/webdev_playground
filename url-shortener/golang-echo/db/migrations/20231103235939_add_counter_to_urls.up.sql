@@ -1,0 +1,2 @@
+ALTER TABLE urls
+    ADD counter INTEGER NOT NULL DEFAULT (0);
