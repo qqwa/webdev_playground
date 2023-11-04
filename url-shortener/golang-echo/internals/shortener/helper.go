@@ -75,7 +75,7 @@ func GetLongUrls(db *sql.DB) ([]UrlDb, error) {
 		log.Println("error: " + err.Error())
 	}
 	defer rows.Close()
-	urls := make([]UrlDb, 1)
+	urls := make([]UrlDb, 0)
 	for rows.Next() {
 		var url UrlDb
 		if err := rows.Scan(&url.Short_url, &url.Long_url); err != nil {
