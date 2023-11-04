@@ -6,6 +6,7 @@ import (
 	"os"
 
 	_ "github.com/lib/pq"
+	"github.com/textileio/go-threads/broadcast"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -23,22 +24,27 @@ func main() {
 		log.Fatal(err)
 	}
 
+	b := broadcast.NewBroadcaster(10)
+
 	e := echo.New()
 	e.Renderer = views.GetTemplates()
 	// HTML routes
 	e.GET("/", routes.Index)
 	e.GET("/shorten", routes.Shorten)
 	e.POST("/shorten", func(c echo.Context) error {
-		return routes.ShortenPost(c, db)
+		return routes.ShortenPost(c, db, b)
 	})
 	e.GET("/l/:url", func(c echo.Context) error {
-		return routes.Url(c, db)
+		return routes.Url(c, db, b)
 	})
 	e.GET("/feed/polling", routes.FeedPolling)
 	e.GET("/feed/polling/data", func(c echo.Context) error {
 		return routes.FeedPollingData(c, db)
 	})
 	e.GET("/feed/sse", routes.FeedSSE)
+	e.GET("/sse", func(c echo.Context) error {
+		return routes.SentSSEData(c, b.Listen())
+	})
 	e.GET("/feed/ws", routes.FeedWS)
 
 	// api routes
@@ -46,10 +52,10 @@ func main() {
 		return routes.GetUrls(c, db)
 	})
 	e.POST("/api/urls", func(c echo.Context) error {
-		return routes.PostUrl(c, db)
+		return routes.PostUrl(c, db, b)
 	})
 	e.GET("/api/urls/:url", func(c echo.Context) error {
-		return routes.GetUrl(c, db)
+		return routes.GetUrl(c, db, b)
 	})
 	e.PATCH("/api/urls/:url", func(c echo.Context) error {
 		return routes.PatchUrl(c, db)

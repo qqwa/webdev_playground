@@ -3,10 +3,23 @@ package shortener
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"math/rand"
 	"strings"
+
+	"github.com/labstack/echo/v4"
 )
+
+func UrlToEvent(event string, url UrlDb) string {
+	switch event {
+	case "created":
+		return fmt.Sprintf("<div><span class=\"font-bold\">%s</span> new Short Link %s for %s</div>", event, url.Short_url, url.Long_url)
+	case "clicked":
+		return fmt.Sprintf("<div><span class=\"font-bold\">%s</span> %s for %v time</div>", event, url.Short_url, url.Counter)
+	}
+	return ""
+}
 
 func IsUrl(url string) bool {
 	return strings.HasPrefix(url, "http://") ||
@@ -105,4 +118,10 @@ func IncrementShortUrl(db *sql.DB, short_url string) error {
 		return err
 	}
 	return nil
+}
+
+func WriteServerSentEvent(response *echo.Response, event string, data string) {
+	response.Writer.Write([]byte(fmt.Sprintf("event: %s\n", event)))
+	response.Writer.Write([]byte(fmt.Sprintf("data: %s\n\n", data)))
+	response.Flush()
 }

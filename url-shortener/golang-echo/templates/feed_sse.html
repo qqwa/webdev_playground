@@ -1,0 +1,10 @@
+{{define "title"}}Feed Server Sent Events - Url Shortener{{end}}
+
+{{define "content"}}
+<div>
+    <h2 class="text-xl font-bold">Events:</h2>
+    <pre hx-ext="sse" sse-connect="/sse" sse-swap="ping" hx-swap="afterbegin">
+
+    </pre>
+</div>
+{{end}}

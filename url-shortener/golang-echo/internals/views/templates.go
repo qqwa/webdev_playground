@@ -1,6 +1,8 @@
 package views
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"text/template"
@@ -26,6 +28,7 @@ func GetTemplates() Template {
 	t.templates["shorten_post"] = addTemplate("templates/shorten_post.html")
 	t.templates["feed_poll"] = addTemplate("templates/feed_poll.html")
 	t.templates["urls"] = addTemplateStandalone("templates/urls.html")
+	t.templates["feed_sse"] = addTemplate("templates/feed_sse.html")
 
 	return t
 }
@@ -44,4 +47,20 @@ func addTemplateStandalone(path string) *template.Template {
 		panic(fmt.Errorf("%s", err))
 	}
 	return template
+}
+
+func WriteServerSentEvent(response *echo.Response, event string, data any) {
+	m := map[string]any{
+		"data": data,
+	}
+	buff := bytes.NewBuffer([]byte{})
+	encoder := json.NewEncoder(buff)
+	err := encoder.Encode(m)
+	if err != nil {
+		return
+	}
+
+	response.Writer.Write([]byte(fmt.Sprintf("event: %s\n", event)))
+	response.Writer.Write([]byte(fmt.Sprintf("data: %v\n\n", buff.String())))
+	response.Flush()
 }

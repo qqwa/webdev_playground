@@ -6,6 +6,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/qqwa/url-shortener/internals/shortener"
+	"github.com/textileio/go-threads/broadcast"
 )
 
 type ApiError struct {
@@ -24,7 +25,7 @@ type LongUrl struct {
 	Url string `json:"url"`
 }
 
-func PostUrl(c echo.Context, db *sql.DB) error {
+func PostUrl(c echo.Context, db *sql.DB, b *broadcast.Broadcaster) error {
 	var long_url LongUrl
 	err := c.Bind(&long_url)
 	if err != nil {
@@ -35,16 +36,19 @@ func PostUrl(c echo.Context, db *sql.DB) error {
 		return c.JSON(http.StatusOK, ApiError{Message: err.Error()})
 	}
 	url.Short_url = shortener.ShortUrlToFullUrl(c.Request().Host, url.Short_url)
+	b.Send(shortener.UrlToEvent("created", *url))
 	return c.JSON(http.StatusOK, url)
 }
 
-func GetUrl(c echo.Context, db *sql.DB) error {
+func GetUrl(c echo.Context, db *sql.DB, b *broadcast.Broadcaster) error {
 	short_url := c.Param("url")
 	url, err := shortener.GetLongUrl(db, short_url)
 	if err != nil {
 		return c.JSON(http.StatusOK, ApiError{Message: err.Error()})
 	}
 	shortener.IncrementShortUrl(db, short_url)
+	url.Counter += 1
+	b.Send(shortener.UrlToEvent("clicked", *url))
 	return c.JSON(http.StatusOK, url)
 }
 
