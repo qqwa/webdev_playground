@@ -1,5 +1,8 @@
 # golang echo
 
+Exploring backend development with go using echo and text/template.
+
+Htmx is used for the interactive pages `/feed/*`
 
 ## Migrations
 
