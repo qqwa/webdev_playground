@@ -24,12 +24,22 @@ func GetTemplates() Template {
 	t.templates["index"] = addTemplate("templates/index.html")
 	t.templates["shorten"] = addTemplate("templates/shorten.html")
 	t.templates["shorten_post"] = addTemplate("templates/shorten_post.html")
+	t.templates["feed_poll"] = addTemplate("templates/feed_poll.html")
+	t.templates["urls"] = addTemplateStandalone("templates/urls.html")
 
 	return t
 }
 
 func addTemplate(path string) *template.Template {
 	template, err := template.ParseFiles("templates/base.html", path)
+	if err != nil {
+		panic(fmt.Errorf("%s", err))
+	}
+	return template
+}
+
+func addTemplateStandalone(path string) *template.Template {
+	template, err := template.ParseFiles(path)
 	if err != nil {
 		panic(fmt.Errorf("%s", err))
 	}

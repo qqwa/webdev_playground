@@ -44,7 +44,15 @@ func Url(c echo.Context, db *sql.DB) error {
 }
 
 func FeedPolling(c echo.Context) error {
-	return c.String(http.StatusOK, "TODO")
+	return c.Render(http.StatusOK, "feed_poll", nil)
+}
+
+func FeedPollingData(c echo.Context, db *sql.DB) error {
+	urls, err := shortener.GetLongUrls(db)
+	if err != nil {
+		return c.String(http.StatusOK, err.Error())
+	}
+	return c.Render(http.StatusOK, "urls", urls)
 }
 
 func FeedSSE(c echo.Context) error {

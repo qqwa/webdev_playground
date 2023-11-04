@@ -56,12 +56,13 @@ func UpdateShortUrl(db *sql.DB, short_url string, long_url string) (*UrlDb, erro
 type UrlDb struct {
 	Short_url string `json:"short_url"`
 	Long_url  string `json:"long_url"`
+	Counter   int
 }
 
 func GetLongUrl(db *sql.DB, short_url string) (*UrlDb, error) {
-	result := db.QueryRow("SELECT short_url, long_url FROM urls WHERE short_url = $1 LIMIT 1;", short_url)
+	result := db.QueryRow("SELECT short_url, long_url, counter FROM urls WHERE short_url = $1 LIMIT 1;", short_url)
 	var url UrlDb
-	err := result.Scan(&url.Short_url, &url.Long_url)
+	err := result.Scan(&url.Short_url, &url.Long_url, &url.Counter)
 	if err != nil {
 		return nil, err
 	} else {
@@ -70,7 +71,7 @@ func GetLongUrl(db *sql.DB, short_url string) (*UrlDb, error) {
 }
 
 func GetLongUrls(db *sql.DB) ([]UrlDb, error) {
-	rows, err := db.Query(("SELECT short_url, long_url FROM urls;"))
+	rows, err := db.Query(("SELECT short_url, long_url, counter FROM urls;"))
 	if err != nil {
 		log.Println("error: " + err.Error())
 	}
@@ -78,7 +79,7 @@ func GetLongUrls(db *sql.DB) ([]UrlDb, error) {
 	urls := make([]UrlDb, 0)
 	for rows.Next() {
 		var url UrlDb
-		if err := rows.Scan(&url.Short_url, &url.Long_url); err != nil {
+		if err := rows.Scan(&url.Short_url, &url.Long_url, &url.Counter); err != nil {
 			log.Println("error: " + err.Error())
 		}
 		urls = append(urls, url)

@@ -1,0 +1,10 @@
+{{define "title"}}Feed Poll - Url Shortener{{end}}
+
+{{define "content"}}
+<div>
+    <h2 class="text-xl font-bold">Shortend Urls:</h2>
+    <div hx-trigger="every 2s" hx-get="/feed/polling/data" hx-swap="innerHTML">
+
+    </div>
+</div>
+{{end}}

@@ -1,0 +1,15 @@
+<table>
+    <tr>
+        <th>Short Url</th>
+        <th>Long Url</th>
+        <th>Clicks</th>
+    </tr>
+    {{ range . }}
+        <tr>
+            <td><a class="text-blue-700" href="/l/{{.Short_url}}">{{.Short_url}}</a></td>
+            <td><a class="text-blue-700" href="{{.Long_url}}">{{.Long_url}}</a></td>
+            <td>{{.Counter}}</td>
+        </tr>
+    {{ end }}
+</table>
+

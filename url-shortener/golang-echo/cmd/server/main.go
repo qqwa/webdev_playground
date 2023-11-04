@@ -35,6 +35,9 @@ func main() {
 		return routes.Url(c, db)
 	})
 	e.GET("/feed/polling", routes.FeedPolling)
+	e.GET("/feed/polling/data", func(c echo.Context) error {
+		return routes.FeedPollingData(c, db)
+	})
 	e.GET("/feed/sse", routes.FeedSSE)
 	e.GET("/feed/ws", routes.FeedWS)
 
