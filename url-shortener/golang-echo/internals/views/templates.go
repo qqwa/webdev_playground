@@ -29,6 +29,7 @@ func GetTemplates() Template {
 	t.templates["feed_poll"] = addTemplate("templates/feed_poll.html")
 	t.templates["urls"] = addTemplateStandalone("templates/urls.html")
 	t.templates["feed_sse"] = addTemplate("templates/feed_sse.html")
+	t.templates["feed_ws"] = addTemplate("templates/feed_ws.html")
 
 	return t
 }

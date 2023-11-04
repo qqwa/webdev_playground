@@ -2,11 +2,13 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
 	_ "github.com/lib/pq"
 	"github.com/textileio/go-threads/broadcast"
+	"golang.org/x/net/websocket"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
@@ -14,6 +16,21 @@ import (
 	"github.com/qqwa/url-shortener/internals/routes"
 	"github.com/qqwa/url-shortener/internals/views"
 )
+
+func ws_handler(c echo.Context, listener *broadcast.Listener) error {
+	websocket.Handler(func(ws *websocket.Conn) {
+		defer ws.Close()
+		for v := range listener.Channel() {
+			data := fmt.Sprintf("<div hx-swap-oob=\"afterbegin:#event\">%v</div>", v)
+			err := websocket.Message.Send(ws, data)
+			if err != nil {
+				c.Logger().Error(err)
+				break
+			}
+		}
+	}).ServeHTTP(c.Response(), c.Request())
+	return nil
+}
 
 func main() {
 	godotenv.Load()
@@ -46,6 +63,9 @@ func main() {
 		return routes.SentSSEData(c, b.Listen())
 	})
 	e.GET("/feed/ws", routes.FeedWS)
+	e.GET("/ws", func(c echo.Context) error {
+		return ws_handler(c, b.Listen())
+	})
 
 	// api routes
 	e.GET("/api/urls", func(c echo.Context) error {

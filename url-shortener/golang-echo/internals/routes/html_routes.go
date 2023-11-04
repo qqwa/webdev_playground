@@ -77,5 +77,5 @@ func SentSSEData(c echo.Context, listener *broadcast.Listener) error {
 }
 
 func FeedWS(c echo.Context) error {
-	return c.String(http.StatusOK, "TODO")
+	return c.Render(http.StatusOK, "feed_ws", nil)
 }
