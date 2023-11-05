@@ -1,0 +1,21 @@
+{% set title = "Index - Url Shortener" %}
+{% extends "base.html" %}
+{% block content %}
+
+<div class="mt-2">
+    <h2 class="text-xl font-bold">Shorten Your Urls</h2>
+    <p>Click shorten in the navbar to create a new shortend url or watch
+        the activity of newly created shortend urls and stats of them
+        either through polling, server sent events or websockets.
+    </p>
+</div>
+<div class="mt-2">
+    <h2 class="text-xl font-bold">REST API</h2>
+    <p>GET /api/urls</p>
+    <p>POST /api/urls</p>
+    <p>GET /api/urls/:url</p>
+    <p>PATCH /api/urls/:url</p>
+    <p>DELETE /api/urls/:url</p>
+</div>
+
+{% endblock %}
