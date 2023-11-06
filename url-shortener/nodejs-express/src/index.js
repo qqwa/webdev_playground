@@ -20,6 +20,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.get('/', views.index);
 app.get('/shorten', views.shorten);
 app.post('/shorten', views.shorten_post);
+app.get('/l/:url', views.url);
 
 // api/json
 app.get('/api/urls', api.getUrls);
