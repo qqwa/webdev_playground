@@ -1,5 +1,6 @@
 const helper = require('./helper')
 const db = require('./queries')
+
 const EventEmitter = require('events').EventEmitter;
 const sse_events = new EventEmitter;
 
@@ -62,6 +63,10 @@ const sse = (request, response) => {
     })
 }
 
+const feed_ws = (request, response) => {
+    response.render('feed_ws.html');
+}
+
 module.exports = {
     index,
     shorten,
@@ -70,5 +75,6 @@ module.exports = {
     feed_poll,
     feed_sse,
     sse,
-    sse_events
+    sse_events,
+    feed_ws
 };
