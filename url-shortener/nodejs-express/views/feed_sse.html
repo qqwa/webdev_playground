@@ -1,0 +1,11 @@
+{% set title = "Feed SSE - Url Shortener" %}
+{% extends "base.html" %}
+{% block content %}
+<div class="mt-2">
+    <h2 class="text-xl font-bold">Shortend Urls:</h2>
+    <ul id="list" class="list-none">
+    </ul>
+
+    <script src="/assets/sse.js"></script>
+</div>
+{% endblock %}

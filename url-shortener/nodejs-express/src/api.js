@@ -1,5 +1,6 @@
 const db = require('./queries');
 const helper = require('./helper')
+const sse_events = require('./views').sse_events;
 
 async function getUrls(request, response) {
     const urls = await db.getUrls();
@@ -8,19 +9,16 @@ async function getUrls(request, response) {
 
 async function postUrl(request, response) {
     const { url } = request.body;
-    try {
-        for (const i of [3, 5, 7, 9]) {
-            const short_url = helper.generateUrl(i)
-            const res = await db.createUrl(short_url, url);
-            response.status(200).json({"status": "ok", body: {
-                "short_url": short_url,
-                "long_url": url
-            }});
-            return;
-        }
-    } catch (error) {
-        response.status(200).json({"status": "error", "message": error.detail});
-    }
+    data = await helper.shorten(url)
+    sse_events.emit('event', {
+        "what": "created",
+        "long_url": url,
+        "short_url": data.short_url
+    });
+    response.status(200).json({"status": "ok", body: {
+        "short_url": data.short_url,
+        "long_url": data.url
+    }});
 }
 
 async function getUrl(request, response) {
@@ -30,6 +28,11 @@ async function getUrl(request, response) {
         let body = res.rows[0];
         body.counter += 1;
         await db.incrementUrl(url);
+        sse_events.emit('event', {
+            "what": "clicked",
+            "long_url": body.long_url,
+            "short_url": body.short_url
+        });
         response.status(200).json({"status": "ok", body});
     } catch (error) {
         response.status(200).json({"status": "error", "message": error});

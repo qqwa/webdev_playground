@@ -15,6 +15,7 @@ nunjucks.configure('views', {
 });
 
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 
 app.use('/assets', express.static('assets'));
 
@@ -24,6 +25,8 @@ app.get('/shorten', views.shorten);
 app.post('/shorten', views.shorten_post);
 app.get('/l/:url', views.url);
 app.get('/feed/polling', views.feed_poll);
+app.get('/feed/sse', views.feed_sse);
+app.get('/sse', views.sse);
 
 // api/json
 app.get('/api/urls', api.getUrls);
