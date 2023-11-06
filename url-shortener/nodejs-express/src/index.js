@@ -16,11 +16,14 @@ nunjucks.configure('views', {
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
+app.use('/assets', express.static('assets'));
+
 // html/browser
 app.get('/', views.index);
 app.get('/shorten', views.shorten);
 app.post('/shorten', views.shorten_post);
 app.get('/l/:url', views.url);
+app.get('/feed/polling', views.feed_poll);
 
 // api/json
 app.get('/api/urls', api.getUrls);

@@ -26,12 +26,16 @@ const url = async (request, response) => {
     } catch (error) {
         response.redirect("/");
     }
+}
 
+const feed_poll = (request, response) => {
+    response.render('feed_poll.html');
 }
 
 module.exports = {
     index,
     shorten,
     shorten_post,
-    url
+    url,
+    feed_poll
 };
