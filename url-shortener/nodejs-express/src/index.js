@@ -14,8 +14,12 @@ nunjucks.configure('views', {
     express: app
 });
 
+app.use(bodyParser.urlencoded({ extended: true }));
+
 // html/browser
 app.get('/', views.index);
+app.get('/shorten', views.shorten);
+app.post('/shorten', views.shorten_post);
 
 // api/json
 app.get('/api/urls', api.getUrls);

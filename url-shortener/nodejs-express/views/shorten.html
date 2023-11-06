@@ -1,0 +1,14 @@
+{% set title = "Shorten - Url Shortener" %}
+{% extends "base.html" %}
+{% block content %}
+<div class="mt-2">
+    <h2 class="text-xl font-bold">Shorten URL</h2>
+    <form action="/shorten" method="post">
+        <div class="mt-2">
+            <label for="long_url">URL:</label>
+            <input name="long_url" type="text" class="border-2">
+        </div>
+        <button class="mt-2 border-2 bg-teal-400 p-2 hover:bg-teal-500">Submit</button>
+    </form>
+</div>
+{% endblock %}
